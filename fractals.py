@@ -1,73 +1,100 @@
-#import numpy as np
-#from matplotlib import pyplot as plt
 import turtle as tt
 
-def drawTriangle(x, y, pen, a):
+def setPen(x, y, rotation):
     pen.penup()
     pen.setx(x)
     pen.sety(y)
     pen.pendown()
-    for i in range(3):
-        pen.forward(a)
+    pen.setheading(rotation)
+
+def drawTriangle(edge):
+    for k in range(3):
+        pen.forward(edge)
         pen.left(120)
 
-def drawNgon(x, y, pen, a, N, rot):
-    vertices = []
-    pen.penup()
-    pen.setx(x)
-    pen.sety(y)
-    pen.pendown()
-    pen.setheading(rot)
 
-    phi = 360/N
-    for i in range(N):
-        pen.forward(a)
-        pen.left(phi)
-        vertices.append((pen.xcor(), pen.ycor()))
+class Ngon:
+    def __init__(self, edge, n, x=0, y=0, rotation=0):
+        self.x = x
+        self.y = y
+        self.rotation = rotation
+        self.edge = edge
+        self.n = n
+        self.phi = 360/n
+        self.vertices = None
 
-    return vertices
-def drawStep(x, y, pen, a):
-    #parent
-    drawTriangle(x, y, pen, a)
+    def __repr__(self):
+        return "Ngon object with {} vertices of size {}".format(self.n, self.edge)
 
-    #children
-    drawTriangle(x, y, pen, a/2)
-    drawTriangle(a/2+x, y, pen, a/2)
-    drawTriangle(a/4+x, (3**0.5)*a/4+y, pen, a/2)
+    def draw(self, pen):
+        pen.penup()
+        pen.setx(self.x)
+        pen.sety(self.y)
+        pen.pendown()
+        pen.setheading(self.rotation)
+
+        pen.begin_poly()
+        for i in range(self.n):
+            pen.forward(self.edge)
+            pen.left(self.phi)
+
+        self.vertices = pen.get_poly()
+
+class SierpinskiTriangle:
+    def __init__(self, edge, iterations, x=0, y=0, rotation=0):
+        self.x = x
+        self.y = y
+        self.rotation = rotation
+        self.edge = edge
+        self.iterations = iterations
+
+        self.generations = None
 
 
+    def makeGenerations(self):
+        self.generations = [Ngon(self.edge/(2**i), 3) for i in range(self.iterations)]
 
-def drawST(x, y, pen, a, steps):
-    if steps > 0:
 
-        coordinates  = []
-        drawStep(x, y, pen, a)
-        coordinates.append((x, y))
-        coordinates.append((a/2+x, y))
-        coordinates.append((a/4+x, (3**0.5)*a/4+y))
+    def drawGeneration(self, i, x, y, pen):
+        setPen(x, y, self.rotation)
 
-        a = a/2
+        pen.begin_poly()
+        drawTriangle(self.generations[i].edge)
+        vertices = pen.get_poly()
+        x1, y1 = vertices[1]
+        setPen(x1, y1, self.rotation)      
+        drawTriangle(self.generations[i].edge)
 
-        for x, y in coordinates:
-            drawStep(x, y, pen, a)
+        x2, y2 = vertices[2]
+        setPen(x2, y2, self.rotation)
+        drawTriangle(self.generations[i].edge)
 
-        for x, y in coordinates:
-            drawST(x, y, pen, a, steps-1)
+        return [(x, y), (x1, y1), (x2, y2)]
+    
+
+    def drawAll(self, pen, iteration=0, g=None):
+        print("Working on iteration:", iteration)
+        if iteration == 0:
+            g = self.drawGeneration(iteration, self.x, self.y, pen)
+            self.drawAll(pen, iteration+1, g)
+
+        else:
+            if iteration < self.iterations:
+                for k in g:
+                    g2 = self.drawGeneration(iteration, k[0], k[1], pen)
+                    self.drawAll(pen, iteration+1, g2)
+
+
 
 
 
 window = tt.Screen()
 pen = tt.Turtle()
-pen.speed(10)
-#drawST(-100, -100, pen, 500, 3)
-
-
-rot = 360/5
-pentagon = drawNgon(0, 0, pen, 100, 5, 0)
-for x,y in pentagon:
-    drawNgon(x, y, pen, 100, 5, rot)
-
+pen.speed(100)
+x = SierpinskiTriangle(200, 5, -100, -100)
+x.makeGenerations()
+#x.drawGeneration(0, 0, 0, pen)
+x.drawAll(pen)
+print(x.generations)
 
 window.exitonclick()
-
-#TODO: 3D!!!
