@@ -99,14 +99,17 @@ class SierpinskiTriangle:
         iteration and g variables should be left at their default states!
         """
         print("Working on iteration:", iteration)
+
         if iteration == 0:
             g = self.drawGeneration(iteration, self.x, self.y, pen)
             self.drawAll(pen, iteration+1, g)
 
         else:
             if iteration < self.iterations:
+                G = []
                 for k in g:
-                    g2 = self.drawGeneration(iteration, k[0], k[1], pen)
+                    G.append(self.drawGeneration(iteration, k[0], k[1], pen))
+                for g2 in G:
                     self.drawAll(pen, iteration+1, g2)
 
 
@@ -114,6 +117,7 @@ if __name__ == "__main__":
     window = tt.Screen()
     pen = tt.Turtle()
     pen.speed(100)
+    pen.pensize(3)
 
     A = 200
     ITERS = 5
